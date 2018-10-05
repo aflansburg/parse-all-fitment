@@ -18,32 +18,33 @@ function retrieveFitment (){
     getFeed().then(res => {
       parseString(res, (err, result) => {
         const products = result.rss.channel[0].items[0].item;
-        console.log(products.length);
+        console.log('Total Products:' + products.length);
         const parsedProducts = products.map(product => {
           return parseFitment({
             sku: product.childIds[0].id[0],
-            combinedFitment: product.parentattributes[0].attribute[17].value &&product.parentattributes[0].attribute[17].value[0].replace(/:/g, ' '),
+            combinedFitment: product.parentattributes[0].attribute[17].value &&product.parentattributes[0].attribute[17].value[0].replace(/:/g, ' ').replace(/\r/g, ''),
           })
         });
-        fitmentData = parsedProducts.map(p => {
-          let fRecord = {
-            sku: p.sku,
-          };
+        parsedProducts.forEach(p => {
 
           if (p.fitment[0] && typeof p.fitment[0] !== 'string') {
             p.fitment.forEach(fit => {
+
               fit.drive.forEach(d => {
                 fit.years.forEach(year => {
+                  let fRecord = {
+                    sku: `="${p.sku}"`
+                  }
                   fRecord.year = year;
                   fRecord.make = fit.make;
                   fRecord.model = fit.model;
                   fRecord.drive = d;
                   fRecord.notes =  p.notes && p.notes.join('; ');
+                  fitmentData.push(fRecord);
                 })
               })
             })
           }
-          return fRecord;
         })
         const writer = csvWriter({ headers: ['sku', 'year', 'make', 'model', 'drive', 'notes']});
         writer.pipe(fs.createWriteStream('out.csv'));
@@ -51,6 +52,7 @@ function retrieveFitment (){
           writer.write(record);
         });
         writer.end();
+        console.log('Fitment written to ' + __dirname + '\\out.csv');
       });
       
   });

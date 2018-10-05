@@ -25,7 +25,7 @@ function parseFitment(product){
     }
     let fitmentArray = '';
     if (product.combinedFitment){
-      fitmentArray = product.combinedFitment.replace(/;\s/g, ';').replace(/\n/g, '').split(';');
+      fitmentArray = product.combinedFitment.replace(/;\s/g, ';').replace(/\n/g, ';').split(';');
       fitmentArray.forEach(fitment => {
         let m;
         let fit = {
