@@ -11,7 +11,7 @@ function getFeed(){
     })
 };
 
-function retrieveFitment (){
+function retrieveFitment (spanYears){
     let fitmentData = [];
     console.log('This process may take some time.......')
 
@@ -25,33 +25,61 @@ function retrieveFitment (){
             combinedFitment: product.parentattributes[0].attribute[17].value &&product.parentattributes[0].attribute[17].value[0].replace(/:/g, ' ').replace(/\r/g, ''),
           })
         });
-        parsedProducts.forEach(p => {
-
-          if (p.fitment[0] && typeof p.fitment[0] !== 'string') {
-            p.fitment.forEach(fit => {
-
-              fit.drive.forEach(d => {
-                fit.years.forEach(year => {
-                  let fRecord = {
-                    sku: `="${p.sku}"`
-                  }
-                  fRecord.year = year;
-                  fRecord.make = fit.make;
-                  fRecord.model = fit.model;
-                  fRecord.drive = d;
-                  fRecord.notes =  p.notes && p.notes.join('; ');
-                  fitmentData.push(fRecord);
+        if (!spanYears){
+          parsedProducts.forEach(p => {
+            if (p.fitment[0] && typeof p.fitment[0] !== 'string') {
+              p.fitment.forEach(fit => {
+  
+                fit.drive.forEach(d => {
+                  fit.years.forEach(year => {
+                    let fRecord = {
+                      sku: `="${p.sku}"`
+                    }
+                    fRecord.year = year;
+                    fRecord.make = fit.make;
+                    fRecord.model = fit.model;
+                    fRecord.drive = d;
+                    fRecord.notes =  p.notes && p.notes.join('; ');
+                    fitmentData.push(fRecord);
+                  })
                 })
               })
-            })
-          }
-        })
-        const writer = csvWriter({ headers: ['sku', 'year', 'make', 'model', 'drive', 'notes']});
-        writer.pipe(fs.createWriteStream('out.csv'));
-        fitmentData.forEach(record => {
-          writer.write(record);
-        });
-        writer.end();
+            }
+          })
+          const writer = csvWriter({ headers: ['sku', 'year', 'make', 'model', 'drive', 'notes']});
+          writer.pipe(fs.createWriteStream('out.csv'));
+          fitmentData.forEach(record => {
+            writer.write(record);
+          });
+          writer.end();
+        }
+        else {
+          parsedProducts.forEach(p => {
+            if (p.fitment[0] && typeof p.fitment[0] !== 'string') {
+              p.fitment.forEach(fit => {
+                fit.drive.forEach(d => {
+                    let fRecord = {
+                      sku: `="${p.sku}"`
+                    }
+                    fRecord.startYear = Math.min(...fit.years.map(year => String(year)));
+                    fRecord.endYear = Math.max(...fit.years.map(year => String(year)));
+                    fRecord.make = fit.make;
+                    fRecord.model = fit.model;
+                    fRecord.drive = d;
+                    fRecord.notes =  p.notes && p.notes.join('; ');
+                    fitmentData.push(fRecord);
+                })
+              })
+            }
+          })
+          const writer = csvWriter({ headers: ['sku', 'startYear', 'endYear', 'make', 'model', 'drive', 'notes']});
+          writer.pipe(fs.createWriteStream('out.csv'));
+          fitmentData.forEach(record => {
+            writer.write(record);
+          });
+          writer.end();
+        }
+        
         console.log('Fitment written to ' + __dirname + '\\out.csv');
       });
       
